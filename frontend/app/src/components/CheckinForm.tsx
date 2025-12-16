@@ -33,9 +33,15 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
     setError(null);
 
     try {
-      // The request goes to /api/checkin, which the Vite proxy forwards to http://localhost:8000/checkin
-      const response = await axios.post('/checkin', {
+      // Use the deployed backend URL from environment variable
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await axios.post(`${apiBaseUrl}/checkin`, {
         user_text: text,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000, // 30 second timeout
       });
 
       console.log('Check-in submitted successfully:', response.data);
@@ -63,9 +69,20 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
       
       // Trigger immediate refresh of parent components
       onSuccess();
-    } catch (err) {
-      setError("Failed to submit entry. Check the Python server and proxy setup.");
-      console.error(err);
+    } catch (err: any) {
+      console.error('CheckinForm: API error:', err);
+      
+      if (err.code === 'ECONNABORTED') {
+        setError("Request timed out. The server might be starting up, please try again in a moment.");
+      } else if (err.response?.status === 500) {
+        setError("Server error. The backend database might be unavailable. Your entry has been saved locally.");
+      } else if (err.response?.status >= 400) {
+        setError(`Server error (${err.response.status}): ${err.response.data?.detail || 'Unknown error'}`);
+      } else if (err.request) {
+        setError("Cannot connect to server. Please check your internet connection or try again later.");
+      } else {
+        setError("Failed to submit entry. Please try again.");
+      }
       
       // Even if backend fails, save to localStorage as offline backup
       const localEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');

@@ -19,11 +19,11 @@ export default defineConfig(({ mode }) => {
     },
   };
 
-  // Keep the proxy only for local development
-  if (isDevelopment) {
+  // Keep the proxy only for local development when using localhost backend
+  if (isDevelopment && !env.VITE_API_BASE_URL) {
     config.server.proxy = {
       '/api': {
-        target: env.VITE_API_BASE_URL_DEV || 'http://localhost:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

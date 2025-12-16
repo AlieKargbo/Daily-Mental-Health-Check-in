@@ -23,7 +23,7 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info' | 'warning' | 'error'} | null>(null);
 
   const loadEntries = useCallback(async () => {
-    console.log('loadEntries: Starting API call to /api/timeline');
+    console.log('loadEntries: Starting API call to /timeline');
     
     // First, try to load from localStorage immediately for faster UI
     const localEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
@@ -34,7 +34,14 @@ const App: React.FC = () => {
     }
     
     try {
-      const response = await axios.get('/timeline');
+      // Use the deployed backend URL from environment variable
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await axios.get(`${apiBaseUrl}/timeline`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        timeout: 30000, // 30 second timeout
+      });
       const newEntries = response.data;
       console.log('loadEntries: Received', newEntries.length, 'entries from API');
       
@@ -54,20 +61,31 @@ const App: React.FC = () => {
         return newEntries;
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('loadEntries: Failed to load entries from API:', error);
+      
+      let errorMessage = 'Failed to load data from server.';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Server request timed out. The backend might be starting up.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server database error. Using local data.';
+      } else if (error.response?.status >= 400) {
+        errorMessage = `Server error (${error.response.status}). Using local data.`;
+      } else if (error.request) {
+        errorMessage = 'Cannot connect to server. Using local data.';
+      }
       
       // If we don't have local data and API fails, show error
       if (localEntries.length === 0) {
         setEntries([]);
         setToast({
-          message: 'Failed to load data. Please check your connection.',
+          message: errorMessage,
           type: 'error'
         });
       } else {
         // We already loaded local data, just show a warning
         setToast({
-          message: 'Using offline data. Connection to server failed.',
+          message: `${errorMessage} Showing ${localEntries.length} local entries.`,
           type: 'warning'
         });
       }

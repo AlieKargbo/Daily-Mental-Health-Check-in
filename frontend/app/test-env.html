@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Environment Variable Test</title>
+</head>
+<body>
+    <h1>Environment Variable Test</h1>
+    <p>VITE_API_BASE_URL: <span id="api-url"></span></p>
+    
+    <script type="module">
+        // This will only work in development mode with Vite
+        const apiUrl = import.meta.env.VITE_API_BASE_URL || 'Not set';
+        document.getElementById('api-url').textContent = apiUrl;
+        console.log('API Base URL:', apiUrl);
+    </script>
+</body>
+</html>
