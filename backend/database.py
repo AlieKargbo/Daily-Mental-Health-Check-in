@@ -3,18 +3,19 @@ import pymongo
 from pymongo.errors import ConnectionFailure
 import datetime
 import os
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
 # Optional: Load environment variables from a .env file for security
-# load_dotenv()
+load_dotenv()
 
 # --- Configuration ---
 # Get connection string from environment variable or replace directly
+#os.environ.get("mongodb+srv://Wellshift:Wellshift2025hack@cluster0.wtydpqz.mongodb.net/?appName=Cluster0")
 # Example local URI: "mongodb://localhost:27017/"
 # Example Atlas URI: "mongodb+srv://<username>:<password>@clustername.mongodb.net/..."
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
-DB_NAME = 'amhci_data_db'
-COLLECTION_NAME = 'checkin_entries'
+MONGO_URI = os.environ.get("MONGO_URI") 
+DB_NAME = "amhci_data_db"
+COLLECTION_NAME = "checkin_entries"
 # ---------------------
 
 # Global variables for the client and collection objects
@@ -95,4 +96,3 @@ if __name__ == '__main__':
     finally:
         # Ensure the connection is closed when the script finishes
         close_mongo_connection()
-

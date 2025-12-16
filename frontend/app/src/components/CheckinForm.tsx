@@ -108,7 +108,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Daily Reflection Check-in</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Daily Mental Health Check-in</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="reflection-text" className="block text-lg font-medium text-gray-700 mb-3">
