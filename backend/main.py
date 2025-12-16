@@ -142,6 +142,7 @@ def submit_checkin(request: CheckinRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing check-in: {str(e)}")
+        
 # --- 2. GET Endpoint for Timeline Data ---
 @app.get("/timeline", response_model=List[CheckinResponse])
 def get_timeline():
