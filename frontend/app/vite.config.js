@@ -1,16 +1,34 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+// vite.config.js (Corrected for GitHub Pages Deployment)
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
 
-export default defineConfig({
-  plugins: [react()],
-  base: "/Daily-Mental-Health-Check-in",
-  server: {
-    proxy: {
+export default defineConfig(({ mode }) => {
+  // Load environment variables (needed if you use VITE_API_BASE_URL_DEV in the proxy)
+  const env = loadEnv(mode, process.cwd(), '');
+
+  const isDevelopment = mode === 'development';
+
+  const config = {
+    plugins: [react()],
+
+    // CRITICAL FIX: Set the base path to your repository name for GitHub Pages to find assets (CSS, JS).
+    base: "/Daily-Mental-Health-Check-in", // Must end with a trailing slash
+    
+    server: {
+      proxy: {}, 
+    },
+  };
+
+  // Keep the proxy only for local development
+  if (isDevelopment) {
+    config.server.proxy = {
       '/api': {
-        target: 'http://localhost:8000',
+        target: env.VITE_API_BASE_URL_DEV || 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    };
   }
-})
+  
+  return config;
+});

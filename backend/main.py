@@ -99,6 +99,7 @@ def generate_support_message(sentiment_score: float, is_anomaly: bool) -> str:
 
 
 # --- API Endpoints ---
+# @app.get("/", response, request)
 
 @app.post("/checkin", response_model=CheckinResponse)
 def submit_checkin(request: CheckinRequest):
@@ -142,7 +143,7 @@ def submit_checkin(request: CheckinRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing check-in: {str(e)}")
-        
+
 # --- 2. GET Endpoint for Timeline Data ---
 @app.get("/timeline", response_model=List[CheckinResponse])
 def get_timeline():
