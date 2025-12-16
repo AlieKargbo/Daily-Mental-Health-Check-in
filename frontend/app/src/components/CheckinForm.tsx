@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useVoiceInput } from '../hooks/useVoiceInput';
+import { endpoints } from '../config';
 
 interface CheckinFormProps {
   onSuccess: () => void; // Callback to refresh the chart after a successful submission
@@ -33,9 +34,8 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
     setError(null);
 
     try {
-      // Use the deployed backend URL from environment variable
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-      const response = await axios.post(`${apiBaseUrl}/checkin`, {
+      // Use the centralized endpoint configuration
+      const response = await axios.post(endpoints.checkin, {
         user_text: text,
       }, {
         headers: {

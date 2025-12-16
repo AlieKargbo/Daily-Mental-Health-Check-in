@@ -3,7 +3,9 @@ import CheckinForm from './components/CheckinForm';
 import TimelineChart from './components/TimelineChart';
 import Toast from './components/Toast';
 import DataDebugPanel from './components/DataDebugPanel';
+import ApiDebugPanel from './components/ApiDebugPanel';
 import { useAutoRefresh } from './hooks/useAutoRefresh';
+import { endpoints } from './config';
 import axios from 'axios';
 import './style.css';
 
@@ -23,7 +25,7 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info' | 'warning' | 'error'} | null>(null);
 
   const loadEntries = useCallback(async () => {
-    console.log('loadEntries: Starting API call to /timeline');
+    console.log('loadEntries: Starting API call to', endpoints.timeline);
     
     // First, try to load from localStorage immediately for faster UI
     const localEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
@@ -34,9 +36,8 @@ const App: React.FC = () => {
     }
     
     try {
-      // Use the deployed backend URL from environment variable
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-      const response = await axios.get(`${apiBaseUrl}/timeline`, {
+      // Use the centralized endpoint configuration
+      const response = await axios.get(endpoints.timeline, {
         headers: {
           'Accept': 'application/json',
         },
@@ -282,6 +283,9 @@ const App: React.FC = () => {
       
       {/* Debug Panel */}
       <DataDebugPanel entries={entries} />
+      
+      {/* API Debug Panel */}
+      <ApiDebugPanel />
     </div>
   );
 };
