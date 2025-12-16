@@ -34,7 +34,7 @@ const App: React.FC = () => {
     }
     
     try {
-      const response = await axios.get('/api/timeline');
+      const response = await axios.get('/timeline');
       const newEntries = response.data;
       console.log('loadEntries: Received', newEntries.length, 'entries from API');
       

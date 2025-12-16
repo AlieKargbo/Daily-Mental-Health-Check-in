@@ -34,7 +34,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
 
     try {
       // The request goes to /api/checkin, which the Vite proxy forwards to http://localhost:8000/checkin
-      const response = await axios.post('/api/checkin', {
+      const response = await axios.post('/checkin', {
         user_text: text,
       });
 
