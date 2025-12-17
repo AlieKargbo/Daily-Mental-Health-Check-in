@@ -285,7 +285,7 @@ const App: React.FC = () => {
       <DataDebugPanel entries={entries} />
       
       {/* API Debug Panel */}
-      <ApiDebugPanel />
+      {/* <ApiDebugPanel /> */}
     </div>
   );
 };
