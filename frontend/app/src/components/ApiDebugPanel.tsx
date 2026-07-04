@@ -18,8 +18,8 @@ const ApiDebugPanel: React.FC = () => {
           <span className="ml-1 break-all">{API_BASE_URL}</span>
         </div>
         <div>
-          <span className="text-gray-300">Timeline:</span> 
-          <span className="ml-1 break-all">{endpoints.timeline}</span>
+          <span className="text-gray-300">Checkin:</span> 
+          <span className="ml-1 break-all">{endpoints.checkin}</span>
         </div>
         <div>
           <span className="text-gray-300">Checkin:</span> 

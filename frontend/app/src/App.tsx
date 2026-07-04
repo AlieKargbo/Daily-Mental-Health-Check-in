@@ -24,82 +24,60 @@ const App: React.FC = () => {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false); // Start with auto-refresh disabled
   const [toast, setToast] = useState<{message: string, type: 'success' | 'info' | 'warning' | 'error'} | null>(null);
 
-  const loadEntries = useCallback(async () => {
-    console.log('loadEntries: Starting API call to', endpoints.timeline);
-    
-    // First, try to load from localStorage immediately for faster UI
-    const localEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
+  const getAnonUserIdKey = (userId: string) => `dailyEntries_${userId}`;
+
+  const loadEntries = useCallback(() => {
+    const anonUserId = localStorage.getItem('anonUserId');
+    const key = anonUserId ? getAnonUserIdKey(anonUserId) : 'dailyEntries';
+
+    const localEntries = JSON.parse(localStorage.getItem(key) || '[]');
     if (localEntries.length > 0) {
-      console.log('loadEntries: Loading', localEntries.length, 'entries from localStorage');
       setEntries(localEntries);
-      setLoading(false);
+    } else {
+      const legacyEntries = anonUserId ? [] : JSON.parse(localStorage.getItem('dailyEntries') || '[]');
+      setEntries(legacyEntries);
     }
-    
+
+    setLoading(false);
+  }, []);
+
+  const ensureAnonUser = useCallback(async () => {
+    let anonUserId = localStorage.getItem('anonUserId');
+    if (anonUserId) {
+      return anonUserId;
+    }
+
     try {
-      // Use the centralized endpoint configuration
-      const response = await axios.get(endpoints.timeline, {
-        headers: {
-          'Accept': 'application/json',
-        },
-        timeout: 30000, // 30 second timeout
+      const response = await axios.get(endpoints.authAnon, {
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
       });
-      const newEntries = response.data;
-      console.log('loadEntries: Received', newEntries.length, 'entries from API');
-      
-      // Always update localStorage with fresh data from backend
-      localStorage.setItem('dailyEntries', JSON.stringify(newEntries));
-      
-      // Use functional update to avoid dependency on entries
-      setEntries(prevEntries => {
-        console.log('loadEntries: Previous entries:', prevEntries.length, 'New entries:', newEntries.length);
-        // Check if we have new entries (only show toast if not initial load and we had previous data)
-        if (prevEntries.length > 0 && newEntries.length > prevEntries.length) {
-          setToast({
-            message: `${newEntries.length - prevEntries.length} new entry(ies) loaded`,
-            type: 'success'
-          });
-        }
-        return newEntries;
-      });
-      
-    } catch (error: any) {
-      console.error('loadEntries: Failed to load entries from API:', error);
-      
-      let errorMessage = 'Failed to load data from server.';
-      if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Server request timed out. The backend might be starting up.';
-      } else if (error.response?.status === 500) {
-        errorMessage = 'Server database error. Using local data.';
-      } else if (error.response?.status >= 400) {
-        errorMessage = `Server error (${error.response.status}). Using local data.`;
-      } else if (error.request) {
-        errorMessage = 'Cannot connect to server. Using local data.';
+      anonUserId = response.data?.anon_user_id;
+      if (anonUserId) {
+        localStorage.setItem('anonUserId', anonUserId);
       }
-      
-      // If we don't have local data and API fails, show error
-      if (localEntries.length === 0) {
-        setEntries([]);
-        setToast({
-          message: errorMessage,
-          type: 'error'
-        });
-      } else {
-        // We already loaded local data, just show a warning
-        setToast({
-          message: `${errorMessage} Showing ${localEntries.length} local entries.`,
-          type: 'warning'
-        });
-      }
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.warn('App: Failed to obtain anonymous user id from backend.', error);
     }
-  }, []); // Remove all dependencies to prevent infinite loops
+
+    if (!anonUserId) {
+      anonUserId = `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem('anonUserId', anonUserId);
+    }
+
+    return anonUserId;
+  }, []);
 
   // Initial data load on component mount
   useEffect(() => {
-    console.log('App: Component mounted, loading initial data');
-    loadEntries();
-  }, [loadEntries]);
+    const initialize = async () => {
+      console.log('App: Component mounted, loading initial data');
+      await ensureAnonUser();
+      loadEntries();
+    };
+
+    initialize();
+  }, [ensureAnonUser, loadEntries]);
 
   // Use the auto-refresh hook
   const { isRefreshing, lastRefresh, manualRefresh } = useAutoRefresh(

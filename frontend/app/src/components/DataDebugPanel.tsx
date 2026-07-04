@@ -7,7 +7,9 @@ interface DataDebugPanelProps {
 const DataDebugPanel: React.FC<DataDebugPanelProps> = ({ entries }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const localStorageData = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
+  const anonUserId = localStorage.getItem('anonUserId');
+  const entriesKey = anonUserId ? `dailyEntries_${anonUserId}` : 'dailyEntries';
+  const localStorageData = JSON.parse(localStorage.getItem(entriesKey) || '[]');
 
   if (!isOpen) {
     return (
@@ -48,6 +50,7 @@ const DataDebugPanel: React.FC<DataDebugPanelProps> = ({ entries }) => {
         
         <div>
           <strong>localStorage Entries:</strong> {localStorageData.length}
+          <div className="text-xs text-gray-500 mb-2">Key: {entriesKey}</div>
           <ul className="ml-4 text-xs text-gray-600">
             {localStorageData.slice(0, 3).map((entry: any, i: number) => (
               <li key={i}>
@@ -62,7 +65,7 @@ const DataDebugPanel: React.FC<DataDebugPanelProps> = ({ entries }) => {
         <div className="pt-2 border-t">
           <button
             onClick={() => {
-              localStorage.removeItem('dailyEntries');
+              localStorage.removeItem(entriesKey);
               window.location.reload();
             }}
             className="text-red-600 hover:text-red-800 text-xs"

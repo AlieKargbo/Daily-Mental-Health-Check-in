@@ -22,6 +22,41 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
     }
   }, [transcript, resetTranscript]);
 
+  const getAnonUserId = async (): Promise<string> => {
+    let anonUserId = localStorage.getItem('anonUserId');
+    if (anonUserId) {
+      return anonUserId;
+    }
+
+    try {
+      const response = await axios.get(endpoints.authAnon, {
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
+      });
+
+      anonUserId = response.data?.anon_user_id;
+      if (anonUserId) {
+        localStorage.setItem('anonUserId', anonUserId);
+        return anonUserId;
+      }
+    } catch (err) {
+      console.warn('CheckinForm: Unable to fetch anonymous user id from backend, using local fallback.', err);
+    }
+
+    anonUserId = `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem('anonUserId', anonUserId);
+    return anonUserId;
+  };
+
+  const getLocalEntriesKey = (anonUserId: string) => `dailyEntries_${anonUserId}`;
+
+  const saveEntryLocally = (entry: any, anonUserId: string) => {
+    const key = getLocalEntriesKey(anonUserId);
+    const localEntries = JSON.parse(localStorage.getItem(key) || '[]');
+    localEntries.push(entry);
+    localStorage.setItem(key, JSON.stringify(localEntries));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -34,40 +69,40 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
     setError(null);
 
     try {
+      const anonUserId = await getAnonUserId();
       // Use the centralized endpoint configuration
       const response = await axios.post(endpoints.checkin, {
         user_text: text,
       }, {
         headers: {
           'Content-Type': 'application/json',
+          'X-Anon-User-Id': anonUserId,
         },
         timeout: 30000, // 30 second timeout
       });
 
       console.log('Check-in submitted successfully:', response.data);
       
-      // Log sentiment feedback for debugging
+      if (response.data?.anon_user_id) {
+        localStorage.setItem('anonUserId', response.data.anon_user_id);
+      }
+      
       const sentimentLabel = response.data.sentiment_score > 0.6 ? 'positive' : 
                             response.data.sentiment_score < 0.4 ? 'concerning' : 'neutral';
       console.log(`Sentiment analysis: ${sentimentLabel} (${(response.data.sentiment_score * 100).toFixed(1)}%)`);
       
-      // Immediately add to localStorage for instant persistence
-      const localEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
       const newEntry = {
         id: response.data.id,
         timestamp: response.data.timestamp,
         sentiment_score: response.data.sentiment_score,
         anomaly_flag: response.data.anomaly_flag,
-        user_text: text.trim()
+        user_text: text.trim(),
+        anon_user_id: response.data?.anon_user_id || anonUserId,
       };
-      localEntries.push(newEntry);
-      localStorage.setItem('dailyEntries', JSON.stringify(localEntries));
-      console.log('CheckinForm: Added entry to localStorage, total entries:', localEntries.length);
+      saveEntryLocally(newEntry, anonUserId);
+      console.log('CheckinForm: Added entry to localStorage');
       
-      // Clear the form
       setText('');
-      
-      // Trigger immediate refresh of parent components
       onSuccess();
     } catch (err: any) {
       console.error('CheckinForm: API error:', err);
@@ -85,17 +120,16 @@ const CheckinForm: React.FC<CheckinFormProps> = ({ onSuccess }) => {
       }
       
       // Even if backend fails, save to localStorage as offline backup
-      const localEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
       const offlineEntry = {
         id: `offline-${Date.now()}`,
         timestamp: new Date().toISOString(),
         sentiment_score: 0.5, // Default neutral sentiment
         anomaly_flag: false,
         user_text: text.trim(),
-        offline: true // Mark as offline entry
+        offline: true,
+        anon_user_id: localStorage.getItem('anonUserId') || `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       };
-      localEntries.push(offlineEntry);
-      localStorage.setItem('dailyEntries', JSON.stringify(localEntries));
+      saveEntryLocally(offlineEntry, offlineEntry.anon_user_id);
       console.log('CheckinForm: Saved offline entry to localStorage');
       
       // Still trigger refresh to show the offline entry

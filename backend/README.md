@@ -13,10 +13,12 @@ FastAPI backend with sentiment analysis and anomaly detection for mental health 
 ## Setup
 
 1. **Activate Virtual Environment**:
-   ```bash
-   venv\Scripts\activate  # Windows
-   source venv/bin/activate  # Linux/Mac
-   ```
+   1: python -m venv .venv
+   2: ```bash
+         .venv\Scripts\Activate.ps1  # Windows
+         source venv/bin/activate  # Linux/Mac
+      ```
+   3:
 
 2. **Install Dependencies**:
    ```bash

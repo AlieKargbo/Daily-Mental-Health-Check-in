@@ -92,6 +92,35 @@ export function setupDailyCheckin() {
     voiceBtn.style.display = 'none'
   }
 
+  function getLocalEntriesKey(anonUserId) {
+    return anonUserId ? `dailyEntries_${anonUserId}` : 'dailyEntries'
+  }
+
+  async function getAnonUserId() {
+    let anonUserId = localStorage.getItem('anonUserId')
+    if (anonUserId) {
+      return anonUserId
+    }
+
+    try {
+      const response = await axios.get('/api/auth/anon', {
+        headers: { 'Accept': 'application/json' },
+        timeout: 15000,
+      })
+      anonUserId = response.data?.anon_user_id
+      if (anonUserId) {
+        localStorage.setItem('anonUserId', anonUserId)
+        return anonUserId
+      }
+    } catch (err) {
+      console.warn('Unable to fetch anonymous ID, falling back to local generation.', err)
+    }
+
+    anonUserId = `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    localStorage.setItem('anonUserId', anonUserId)
+    return anonUserId
+  }
+
   // Form submission with axios and enhanced validation
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -110,26 +139,31 @@ export function setupDailyCheckin() {
     hideError()
 
     try {
-      // The request goes to /api/checkin, which the Vite proxy forwards to http://localhost:8000/checkin
+      const anonUserId = await getAnonUserId()
       const response = await axios.post('/api/checkin', {
         user_text: text,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Anon-User-Id': anonUserId,
+        }
       })
 
       console.log('Check-in submitted successfully:', response.data)
       
-      // Store entry locally as backup and for offline access
-      const entries = JSON.parse(localStorage.getItem('dailyEntries') || '[]')
+      const entriesKey = getLocalEntriesKey(anonUserId)
+      const entries = JSON.parse(localStorage.getItem(entriesKey) || '[]')
       entries.push({
         id: response.data.id,
         entry: text,
         timestamp: response.data.timestamp,
         sentiment_score: response.data.sentiment_score,
         anomaly_flag: response.data.anomaly_flag,
+        anon_user_id: response.data.anon_user_id || anonUserId,
         date: new Date().toLocaleDateString()
       })
-      localStorage.setItem('dailyEntries', JSON.stringify(entries))
+      localStorage.setItem(entriesKey, JSON.stringify(entries))
 
-      // Update success message with sentiment info
       const successText = successMessage.querySelector('p')
       let message = 'Thank you for sharing! Your entry has been recorded.'
       
@@ -145,20 +179,16 @@ export function setupDailyCheckin() {
       
       successText.textContent = message
 
-      // Clear the form and show success
       textarea.value = ''
       charCount.textContent = '0 characters'
       successMessage.classList.remove('hidden')
       
-      // Clear draft after successful submission
       localStorage.removeItem('dailyEntryDraft')
       
-      // Hide success message after 8 seconds
       setTimeout(() => {
         successMessage.classList.add('hidden')
       }, 8000)
 
-      // Trigger refresh of chart data if callback exists
       if (window.onCheckinSuccess) {
         window.onCheckinSuccess()
       }
@@ -167,19 +197,23 @@ export function setupDailyCheckin() {
       showError("Failed to submit entry. Check the Python server and proxy setup.")
       console.error(err)
       
-      // Fallback to local storage if backend is unavailable
-      const entries = JSON.parse(localStorage.getItem('dailyEntries') || '[]')
+      const anonUserId = localStorage.getItem('anonUserId') || `anon-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+      if (!localStorage.getItem('anonUserId')) {
+        localStorage.setItem('anonUserId', anonUserId)
+      }
+      const entriesKey = getLocalEntriesKey(anonUserId)
+      const entries = JSON.parse(localStorage.getItem(entriesKey) || '[]')
       entries.push({
         id: Date.now(),
         entry: text,
         timestamp: new Date().toISOString(),
         date: new Date().toLocaleDateString(),
-        offline: true
+        offline: true,
+        anon_user_id: anonUserId
       })
-      localStorage.setItem('dailyEntries', JSON.stringify(entries))
+      localStorage.setItem(entriesKey, JSON.stringify(entries))
       
     } finally {
-      // Re-enable submit button
       submitBtn.disabled = false
       submitBtn.textContent = 'Submit Entry'
     }
@@ -241,24 +275,14 @@ export function setupDailyCheckin() {
   loadPreviousEntries()
 }
 
-// Function to load and display previous entries using axios
+// Function to load and display previous entries from localStorage
 async function loadPreviousEntries() {
-  try {
-    const response = await axios.get('/api/timeline')
-    console.log('Loaded entries from backend:', response.data)
-    
-    // Update local storage with backend data
-    const localEntries = response.data.map(entry => ({
-      id: entry.id,
-      entry: entry.user_text,
-      timestamp: entry.timestamp,
-      sentiment_score: entry.sentiment_score,
-      anomaly_flag: entry.anomaly_flag,
-      date: new Date(entry.timestamp).toLocaleDateString()
-    }))
-    localStorage.setItem('dailyEntries', JSON.stringify(localEntries))
-    
-  } catch (error) {
-    console.log('Could not load entries from backend, using local storage:', error.message)
+  const anonUserId = localStorage.getItem('anonUserId')
+  const key = anonUserId ? `dailyEntries_${anonUserId}` : 'dailyEntries'
+  const entries = JSON.parse(localStorage.getItem(key) || '[]')
+  if (entries.length > 0) {
+    console.log('Loaded local entries:', entries.length)
+  } else {
+    console.log('No local entries found for key:', key)
   }
 }
