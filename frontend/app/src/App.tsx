@@ -195,7 +195,7 @@ const App: React.FC = () => {
                 {entries.slice(-5).reverse().map((entry) => (
                   <div 
                     key={entry.id} 
-                    className={`p-4 rounded-lg border-l-4 ${
+                    className={`p-4 rounded-lg border-l-4  border-r-4 ${
                       entry.anomaly_flag 
                         ? 'border-red-400 bg-red-50' 
                         : entry.sentiment_score > 0.6 
