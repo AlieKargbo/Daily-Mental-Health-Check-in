@@ -28,7 +28,7 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git config user.name "${{ github.actor }}"
 
-          git remote add space https://apKargbo:$HF_TOKEN@huggingface.co/spaces/apKargbo/wellshift-backend
+          git remote add space https://apKargbo:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/apKargbo/wellshift-backend
           
           # Set local identity for the runner to allow committing
           git config --local user.email "action@github.com"
