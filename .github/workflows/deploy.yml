@@ -3,8 +3,6 @@ name: Sync to Hugging Face Spaces
 on:
   push:
     branches: [main]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -17,23 +15,9 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Remove README.md (Hugging Face conflict)
-        run: rm -f README.md
-
       - name: Push to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # configure git identity so commits from the runner are allowed
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git config user.name "${{ github.actor }}"
-
-          git remote add space https://apKargbo:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/apKargbo/wellshift-backend
-          
-          # Set local identity for the runner to allow committing
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          
-          git add -A
-          git commit --allow-empty -m "Deploy to Hugging Face Spaces"
+          git remote add space https://apKargbo:$HF_TOKEN@huggingface.co/spaces/apKargbo/wellshift-backend
           git push --force space main
