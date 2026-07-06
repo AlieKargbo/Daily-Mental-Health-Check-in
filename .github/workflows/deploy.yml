@@ -17,9 +17,14 @@ jobs:
           fetch-depth: 0
           lfs: true
 
+      - name: Remove README.md (Hugging Face conflict)
+        run: rm -f README.md
+
       - name: Push to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote add space https://apKargbo:$HF_TOKEN@huggingface.co/spaces/apKargbo/wellshift-backend
+          git add -A
+          git commit --allow-empty -m "Deploy to Hugging Face Spaces"
           git push --force space main
