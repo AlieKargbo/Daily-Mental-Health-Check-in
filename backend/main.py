@@ -104,7 +104,7 @@ def get_anon_auth(
     user_id = normalize_anon_user_id(x_anon_user_id)
     return {"anon_user_id": user_id}
 
-@app.get("/health")
+@app.get("/")
 def health_check():
     return {"status": "healthy", "timestamp": datetime.datetime.now()}
 
