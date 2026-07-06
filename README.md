@@ -1,13 +1,14 @@
 ---
-title: Wellshift
+title: Wellshift Backend
 emoji: 🚀
 colorFrom: blue
-colorTo: pink
+colorTo: indigo
 sdk: docker
-sdk_version: 4.30.0
-app_file: main.py
 pinned: false
 ---
+
+# Wellshift Backend
+This repository hosts the backend API for Wellshift.
 
 # Daily Mental Health Check-in Application
 
