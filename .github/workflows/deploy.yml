@@ -25,6 +25,11 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote add space https://apKargbo:$HF_TOKEN@huggingface.co/spaces/apKargbo/wellshift-backend
+          
+          # Set local identity for the runner to allow committing
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
           git add -A
           git commit --allow-empty -m "Deploy to Hugging Face Spaces"
           git push --force space main
